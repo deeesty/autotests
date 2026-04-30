@@ -14,5 +14,16 @@ namespace AutoTests.Models
             UserName = userName;
             Password = password;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is AccountData other)
+            {
+                return UserName == other.UserName && Password == other.Password;
+            }
+            return false;
+        }
+
+        public override int GetHashCode() => UserName?.GetHashCode() ?? 0;
     }
 }

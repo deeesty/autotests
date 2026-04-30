@@ -1,11 +1,10 @@
 using NUnit.Framework;
-using OpenQA.Selenium;
 using AutoTests.Models;
 
 namespace AutoTests.Tests
 {
     [TestFixture]
-    public class LoginAddTest : TestBase
+    public class LoginAddTests : TestBase
     {
         private const string TestUser = "JohnnyMammal";
         private const string TestPassword = "**";
@@ -15,56 +14,26 @@ namespace AutoTests.Tests
         [Test]
         public void Login_AddBook_DeleteBook_VerifyOperations()
         {
-            SetupBrowser();
-            NavigateToBooksSection();
+            var account = new AccountData("", "", TestUser, TestPassword);
+            var book = new BookData(BookToAdd);
+
+            app.Navigation.GoToHomePage();
+            app.Navigation.GoToBooksSection();
+            app.Auth.Login(account);
             
-            Login(TestUser, TestPassword);
+            app.Book.AddBookToCollection(BookToAdd);
             
-            AddBookToCollection(BookToAdd);
-            Assert.That(GetAlertText(), Is.EqualTo("Book added to your collection."));
+            string addAlert = app.GetAlertText();
+            Assert.That(addAlert, Is.EqualTo("Book added to your collection."),
+                "Книга не добавлена: неверное сообщение алерта");
+            Assert.That(app.Book.IsBookInCollection(BookToAdd), 
+                $"Книга '{BookToAdd}' не найдена в коллекции");
             
-            DeleteBook(BookToDeleteISBN);
-            Assert.That(GetAlertText(), Is.EqualTo("Book deleted."));
+            app.Book.DeleteBook(BookToDeleteISBN);
             
-            CompleteFlow();
-        }
-
-        private void SetupBrowser()
-        {
-            NavigateToHome();
-            SetWindowSize(windowWidth, windowHeight);
-        }
-
-        private void NavigateToBooksSection()
-        {
-            Click(By.CssSelector("a:nth-child(6) > .card"));
-        }
-
-        private void Login(string username, string password)
-        {
-            Click(By.Id("login"));
-            SendKeys(By.Id("userName"), username);
-            SendKeys(By.Id("password"), password);
-            Click(By.Id("login"));
-        }
-
-        private void AddBookToCollection(string bookTitle)
-        {
-            Click(By.CssSelector(".show #item-2 .text"));
-            Click(By.LinkText(bookTitle));
-            Click(By.CssSelector(".text-right > #addNewRecordButton"));
-        }
-
-        private void DeleteBook(string isbn)
-        {
-            MoveToElement(By.LinkText("Profile"));
-            Click(By.CssSelector($"#delete-record-{isbn} path"));
-            Click(By.Id("closeSmallModal-ok"));
-        }
-
-        private void CompleteFlow()
-        {
-            Click(By.Id("submit"));
+            string deleteAlert = app.GetAlertText();
+            Assert.That(deleteAlert, Is.EqualTo("Book deleted."),
+                "Книга не удалена: неверное сообщение алерта");
         }
     }
 }
